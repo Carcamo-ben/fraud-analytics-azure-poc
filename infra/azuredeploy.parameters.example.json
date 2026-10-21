@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "canadaeast" },
+    "aiLocation": { "value": "canadaeast" },
+    "authClientId": { "value": "" },
+    "allowedUserOid": { "value": "" },
+    "sqlAdminObjectId": { "value": "" },
+    "sqlAdminLogin": { "value": "" },
+    "sqlAdminPrincipalType": { "value": "Group" },
+    "ownerTag": { "value": "" },
+    "reviewAfter": { "value": "" },
+    "bootstrapEnabled": { "value": false },
+    "publicDemoEnabled": { "value": false },
+    "publicDemoUserOid": { "value": "" },
+    "chatModelName": { "value": "gpt-4.1-mini" },
+    "chatModelVersion": { "value": "2025-04-14" },
+    "chatCapacity": { "value": 10 },
+    "embeddingModelName": { "value": "text-embedding-3-small" },
+    "embeddingModelVersion": { "value": "1" },
+    "embeddingCapacity": { "value": 10 }
+  }

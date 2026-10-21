@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "fraud-runtime-contract-v3",
+  "releaseControl": {
+    "sourceOnly": true,
+    "deployed": false,
+    "publicationRequiresExplicitApproval": true,
+    "bootstrapFinalized": true,
+    "sqlReseedRequired": false,
+    "scope": "This is the prepared local source release, not a claim that these versions or the new policy index are deployed. Review the local preview and obtain explicit confirmation before any public publication.",
+    "rollout": "Stage matching web, broker and knowledge applications from one frozen archive. Retain existing authentication, private endpoints/DNS, service identities, quotas, read-only grants and diagnostic controls. A web-only ZIP is not a complete release.",
+    "activation": "Seed/verify the new private policy index with a separately authorized ingestion identity, require matching broker metrics and private knowledge readiness/catalog/evidence gates, then coordinate all three application roles and index configuration. No seed command activates routing.",
+    "rollback": "Retain the old index and prior application artifacts/settings. Roll back web, broker, knowledge and index configuration together; do not rewrite the legacy index in place.",
+    "verificationScope": "Offline contract and source hashes do not attest Azure permissions, networking, regional residency, model identity, immutable-storage policy or live acceptance."
+  },
+  "platformStatus": {
+    "deployedDataPlatform": "azure-sql-database",
+    "deployedModelPlatform": "azure-openai",
+    "targetDataPlatform": "microsoft-fabric",
+    "targetModelPlatform": "microsoft-foundry",
+    "deployedKnowledge": "Historical six-chunk legacy Search deployment is retained and was not changed by preparing this source release.",
+    "limitations": "SQL data is synthetic August-September 2026 and OpenAI is planner-only. Fabric and Foundry remain target architecture, not deployed migrations. Existing diagnostic configuration and approved regional exceptions are not changed or audited here."
+  },
+  "knowledgeContract": {
+    "schemaVersion": "synthetic-policy-manifest-v1",
+    "registry": "synthetic-policy-manifest",
+    "policySetVersion": "synthetic-policy-set-2026-10-20-v1",
+    "snapshotHash": "f17745ee4ea35abab53a64bea2fc664a67222fe45220c8fbebcf865942860c2d",
+    "indexName": "fraud-policy-f17745ee4ea35aba",
+    "chunkCount": 16,
+    "legacyIndexName": "fraud-knowledge-v1",
+    "legacyIndexMayServeThisRuntime": false,
+    "authority": "Validated immutable synthetic manifest under src/knowledge, shared by runtime and ingestion; not actual Rogers policy, a live Fabric registry or legal guidance.",
+    "selection": "Current family ACLs, approved status, publication/approval known at evaluation time, inclusive effectiveFrom and exclusive effectiveTo. Publication is not precedence. Only approved same-family scoped acyclic supersession resolves overlap; otherwise interpretation is withheld.",
+    "history": "Historical lookups and archived evidence retain exact version/date/scope metadata while applying current ACLs. Comparison periods are split at actual policy boundaries; valid broker facts survive policy outages/conflicts.",
+    "referenceProvenance": "Resolved decisions, conflict versions and comparison segments preserve the exact approvedAt and publishedAt instants used by eligibility, separately from effective dates and evaluatedAt. The existing UI displays the returned approval instant; it is fictional manifest metadata, not independent governance attestation. Older immutable artifacts are never rewritten to fill an absent approval timestamp.",
+    "readiness": "Every retrieval/catalog/probe requires a bounded complete metadata inventory with exact membership, count, snapshot and current access metadata before relevance/top-K. Returned content hashes are revalidated. No stale, partial or old-schema fallback.",
+    "evaluationFreshness": "Web search, catalog and comparison responses must carry a real canonical UTC evaluation instant within the actual private request/response window, allowing at most five seconds of clock skew. Stale/future context fails closed; broker facts remain available. Archived evidence retains its original evaluation time and current ACL checks, without applying live-response freshness rules to historical artifacts.",
+    "budgets": "At most64 policy chunks in an inventory,4 returned excerpts,1100 characters per excerpt and4000 excerpt characters total; returned coverage distinguishes complete decisions from uncited versions.",
+    "configuration": "Explicitly set SEARCH_INDEX to indexName only after authorized ingestion verification and matching runtime staging. The loader's legacy default is intentionally not ready for this runtime and does not activate the new index.",
+    "ingestion": {
+      "createOnly": true,
+      "activateOnSeedSuccess": false,
+      "retainLegacyIndex": true,
+      "requireSeparateIngestionIdentity": true,
+      "context": "Use a separately authorized one-off runner inside the existing private Canadian PoC boundary with matching locked source/dependencies. No runner or identity is provisioned by this contract.",
+      "behavior": "Prepare embeddings first when hybrid, create only the content-addressed index using If-None-Match: *, upload all16 chunks, then verify bounded complete inventory. A failed/partial index must never be activated; do not mutate an active legacy index.",
+      "identity": "The ingestion identity needs only the required Search schema/data-write permissions and regional embedding inference if hybrid. Runtime knowledge stays Search-read-only; broker SQL grants and source data do not change. The CLI validates identity format, not independent IAM separation or residency."
+    }
+  },
+  "publicDemo": {
+    "authorization": "Existing opt-in anonymous synthetic demo mode applies to web only; backend APIs still require the allowlisted web identity. It is not permission to publish this prepared increment.",
+    "configuration": {
+      "PUBLIC_DEMO_ENABLED": "true only on web; absent/false retains existing Entra-user authentication",
+      "PUBLIC_DEMO_USER_OID": "Dedicated server-owned GUID, distinct from authenticated users, allowlisted on all three apps and never PolicyOwner",
+      "PUBLIC_DEMO_DATASET": "Must equal azure-sql-synthetic-fraud-v1, with SQL_DATABASE=fraudpoc and SOURCE_AS_OF=2026-10-01T00:00:00Z"
+    },
+    "privacy": "Public synthetic answers and evidence share a dedicated demo namespace. No access to authenticated-user evidence. Raw question text is not retained in evidence; only its hash and the typed plan.",
+    "limits": "Single web worker: shared 12 expensive requests/minute, 2 concurrent expensive requests, 300 expensive requests/UTC day persisted under /home/fraud-demo/request-budget.json. Limits are not a hard financial cap. Do not scale out without a distributed quota store.",
+    "network": "Preserve the existing exposure/authentication configuration. Source preparation never changes publicNetworkAccess, EasyAuth, SCM, private backends or origins. Public publication requires preview and explicit confirmation; do not reuse a publisher that mutates authentication.",
+    "questions": "Standalone bounded aggregate questions, maximum 1000 characters; no write operations, arbitrary SQL or personal-data projections."
+  },
+  "runtime": { "node": "22 LTS", "command": "npm start", "entrypoint": "src/server.mjs", "packageRoot": "fraud-poc", "roles": ["web", "broker", "knowledge"] },
+  "sharedConfiguration": {
+    "ROLE": "web | broker | knowledge",
+    "PORT": "8080, or App Service supplied port",
+    "NODE_ENV": "production",
+    "AZURE_CLIENT_ID": "This app's own user-assigned managed identity CLIENT ID, not object ID",
+    "TENANT_ID": "Entra tenant GUID",
+    "API_AUDIENCE": "api://<shared-api-app-registration-client-id>; canonical GUID audience for v2 tokens is accepted for this same application only",
+    "ALLOWED_USER_OIDS": "Comma-separated explicitly authorized end-user object IDs; REQUIRED ON ALL THREE APPS",
+    "POLICY_OWNER_OIDS": "Optional subset of allowed end-user OIDs with PolicyOwner knowledge permission; omit for default analyst-only behavior",
+    "SOURCE_AS_OF": "2026-10-01T00:00:00Z"
+  },
+  "roleConfiguration": {
+    "web": {
+      "BROKER_URL": "https://<broker-app>.azurewebsites.net",
+      "KNOWLEDGE_URL": "https://<knowledge-app>.azurewebsites.net",
+      "STORAGE_ACCOUNT_URL": "https://<storage>.blob.core.windows.net",
+      "EVIDENCE_CONTAINER": "evidence",
+      "OPENAI_ENDPOINT": "https://<canadian-openai-account>.openai.azure.com",
+      "CHAT_DEPLOYMENT": "Canadian regional chat model supporting structured JSON schema, temperature=0 and max_tokens",
+      "MODEL_VERSION": "Configured version label, or unverified. It is distinct from service-reported completion model/id/fingerprint captured in plannerExecution and is not independent attestation.",
+      "WEBSITE_SITE_NAME": "Provided by App Service; EasyAuth trust is disabled when absent"
+    },
+    "broker": {
+      "ALLOWED_CALLER_OIDS": "Frontend managed identity OBJECT ID; deployment VM object ID only while explicitly authorized for bootstrap acceptance",
+      "SQL_SERVER": "<server>.database.windows.net",
+      "SQL_DATABASE": "fraudpoc"
+    },
+    "knowledge": {
+      "ALLOWED_CALLER_OIDS": "Frontend managed identity OBJECT ID; deployment VM object ID only while explicitly authorized for bootstrap acceptance",
+      "SEARCH_ENDPOINT": "https://<search>.search.windows.net",
+      "SEARCH_INDEX": "fraud-policy-f17745ee4ea35aba",
+      "KNOWLEDGE_MODE": "hybrid by default; keyword-only is an explicit deployment choice, never an automatic fallback",
+      "OPENAI_ENDPOINT": "Same approved Canadian OpenAI account",
+      "EMBEDDING_DEPLOYMENT": "Canadian text-embedding-3-small or text-embedding-3-large deployment supporting dimensions=1536"
+    }
+  },
+  "identityAndNetworkRequirements": {
+    "allApps": "Distinct user-assigned identities; managed identity authentication only. No password, API-key or interactive-credential fallback.",
+    "web": "Preserve the existing authorized mode: Entra/EasyAuth for authenticated users, or explicitly configured synthetic-only anonymous mode with its dedicated identity. Trust X-MS-CLIENT-PRINCIPAL only behind App Service. Frontend has no SQL role/path; retain only existing required model/evidence rights. This contract never changes auth mode.",
+    "apis": "JWT verification is in application code. Ensure EasyAuth does not reject private managed-identity bearer API requests before application verification. Request header x-fraud-user-oid asserts an allowlisted end user only after the frontend MI is verified. Role/group/body claims cannot select scope.",
+    "broker": "Contained Entra SQL user with object-specific SELECT on the two approved reporting views and explicit write/execute/DDL denial. No database role membership.",
+    "knowledge": "Search Index Data Reader plus Cognitive Services OpenAI User for hybrid embeddings. No Search write roles.",
+    "deployment": "Historical elevated SQL bootstrap is finalized and is not reused for this policy update. A separately authorized private ingestion identity needs required Search schema/document writes and embedding inference only if hybrid. Never broaden runtime rights or grant ingestion SQL-admin privileges.",
+    "privateAccess": "Retain existing private endpoints/DNS, VNet integration, route restrictions, source/model private access and inherited diagnostic controls. Prove Canadian source/model placement from authorized resource inventory; runtime HTTPS endpoints and this source contract do not prove residency.",
+    "evidence": "Use the existing private Blob container with public blob access disabled. Create-only paths are <end-user-oid>/<answer-id>.json; no anonymous/SAS link. Application snapshots are immutable and current ACLs gate reads, but infrastructure-enforced retention/WORM must be independently verified.",
+    "evidenceIdentifiers": "Require GUID strings and canonical lowercase object paths. Owner/answer GUID comparisons are case-insensitive, but stored payload identifiers and receipts are never rewritten. Non-string/path-shortcut requests remain404; mismatched stored ownership remains unavailable; revoked policy access remains403 regardless of GUID spelling. Case equivalence never crosses owner namespaces."
+  },
+  "seedCommands": {
+    "executionPolicy": "Historical tool references are not authorization to rerun bootstrap. SQL seed/access setup is finalized and not required for this release. Only separately approved private Search ingestion/verification is contemplated; no command below changes live settings from source preparation.",
+    "install": "npm ci --omit=dev",
+    "sql": "npm run seed:sql",
+    "sqlEnvironment": {
+      "AZURE_CLIENT_ID": "Historical SQL bootstrap identity reference only; do not reuse it for current policy ingestion or rerun SQL setup",
+      "SQL_SERVER": "<server>.database.windows.net",
+      "SQL_DATABASE": "fraudpoc",
+      "SOURCE_AS_OF": "2026-10-01T00:00:00Z",
+      "BROKER_CLIENT_ID": "Broker managed identity CLIENT ID used for the SQL external service-principal SID",
+      "BROKER_LEGACY_OBJECT_ID": "Optional one-time migration of the incorrectly object-ID-based principal. Only the matching, unowned, least-privileged external user is recreated transactionally.",
+      "BROKER_SQL_USER": "Simple identifier matching ^[a-zA-Z][a-zA-Z0-9_-]{0,99}$"
+    },
+    "search": "npm run seed:search",
+    "searchEnvironment": ["AZURE_CLIENT_ID=<separately authorized ingestion UAMI client ID>", "SEARCH_ENDPOINT", "SEARCH_INDEX=fraud-policy-f17745ee4ea35aba", "KNOWLEDGE_MODE=hybrid|keyword-only", "OPENAI_ENDPOINT and EMBEDDING_DEPLOYMENT if hybrid"],
+    "readonlyAcceptance": "npm run acceptance:sql",
+    "readonlyEnvironment": "Separate previously established acceptance must use an already authorized private context with the actual broker identity and SQL_SERVER/SQL_DATABASE/BROKER_CLIENT_ID/BROKER_SQL_USER. The helper rejects elevated seeding identity. Do not attach identities, change access or rerun finalized bootstrap as part of this source-only policy release.",
+    "tests": "npm test"
+  },
+  "sqlContract": {
+    "source": "Real Azure SQL Database populated solely with versioned synthetic monthly aggregate fixtures; not a replica of original SQL MI or Oracle",
+    "tables": ["synthetic.fraud_losses", "synthetic.rule_outcomes"],
+    "approvedViews": ["reporting.v_fraud_losses", "reporting.v_rule_outcomes"],
+    "acceptanceProcedure": "synthetic.readonly_probe is a harmless elevated-owner-created procedure used only to verify runtime EXECUTE denial",
+    "dateMeaning": "period_start is the first of a complete calendar month; end dates are exclusive; current and previous periods cannot overlap; combined length is at most 93 days",
+    "seedRows": { "losses": 54, "rules": 162 },
+    "sourceSnapshot": "Both minimum and maximum source timestamps on every aggregate must match the valid fixed UTC snapshot. Missing, invalid, rolled-calendar or mixed snapshots fail before numeric output; missing periods are never zero.",
+    "sourceIdentity": "business_unit='poc', fixed on the server",
+    "brokerResponse": "Before policy work or evidence persistence, web requires the fixed Azure SQL synthetic source ID, a valid broker UTC snapshot matching its configured SOURCE_AS_OF, and exactly one sql:SHA-256 evidence identifier. Missing, wrong, rolled-calendar or mismatched provenance fails closed with no numerical answer. Equivalent canonical .000Z timestamps are accepted. The separate unshipped local-preview constructor explicitly supplies its local source ID/evidence prefix; there is no request/environment switch or cloud fixture fallback. Identifier shape is not independent SQL execution attestation.",
+    "brokerReceipt": "Fresh evidence includes broker-receipt-v1 containing the complete closed-schema broker response, frozen before web policy caveats, plus SHA-256 of JSON.stringify of that parsed response object. Returned provenance carries the same brokerResponseSha256. Unknown top-level broker fields are rejected; no raw SQL, raw question or extra data projection is added. Complete receipt and answer must fit the existing evidence cap before success; no partial receipt fallback. This is traceability of the returned payload, not independent SQL execution attestation or a raw HTTP wire hash. Historical artifacts are never rewritten to add receipts.",
+    "idempotency": "Seed transaction replaces only the dedicated synthetic business_unit='poc' rows and creates/updates the two reporting views. It refuses mismatched principals, role memberships, ownership or unexpected grants; an explicitly supplied legacy object-ID SID can be migrated transactionally to the client-ID SID.",
+    "directoryLookupAvoidance": "CREATE USER [validatedName] WITH SID = 0x<broker-client-GUID little-endian bytes>, TYPE = E. No FROM EXTERNAL PROVIDER directory resolution is used.",
+    "reference": "https://learn.microsoft.com/en-us/sql/t-sql/statements/create-user-transact-sql?view=azuresqldb-current",
+    "metrics": "fraud-metrics-1.2.1",
+    "moneyPrecision": "Loss input must represent exact two-decimal CAD within the existing absolute1e12per-row bound. Sum and subtract safe integer cents, not floating currency values. Every output amount must roundtrip through numeric JSON currency without losing a cent; unsafe totals/deltas or sub-cent source values fail SOURCE_INTEGRITY_ERROR before any numeric payload. Loss percentages use underlying cent amounts before display rounding and normalize rounded zero. No SQL/schema or source-data mutation is required.",
+    "lossMovements": "Zero net change is unchanged, not an increase. Distinguish unchanged groups from offsetting increases/decreases. For a falling total identify the largest decrease; for a rising total identify the largest increase. Name exact group ties without implying a unique driver or causal effect. Metric1.1.1 changes these narrative semantics, not the numerical formulas.",
+    "ruleRates": "Rank defined current FP/adjudicated ratios before display rounding, both for aggregate rule focus and returned breakdown rows. Exact row ties sort deterministically by rule/group; measured zero precedes undefined current shares. Exact aggregate ties have a named context, not a unique winner. All-zero current denominators produce no ranked focus; historical per-row rates remain. Percentage-point changes use underlying counts and are independently rounded. Aggregate counts remain safe integers.",
+    "templates": "reporting-select-1.0.0",
+    "suppression": "Any needed grouped current or previous cohort below 10 withholds the ENTIRE result, including totals, to prevent subtraction reconstruction."
+  },
+  "acceptanceLimits": [
+    "Local unit tests use in-process injected identities and dependencies only; no test-auth or mock mode exists in the cloud runtime.",
+    "Successful seed does not claim runtime read-only verification. The separate helper must succeed under the actual broker identity.",
+    "No production-scale or 1 TB performance validation is claimed.",
+    "Search ingestion success is not activation. Require matching private knowledge /health/ready, exact authorized catalog snapshot, historical/exclusive/scoped/conflict cases and durable evidence roundtrips before a separately approved coordinated switch.",
+    "Matching web/broker metric/template versions are mandatory; guided readiness alone does not prove policy readiness or permit a mixed release.",
+    "The old six-chunk index is not compatible with this runtime. The new16chunk snapshot and all three matching applications remain prepared-only until approved activation; no legacy fallback is allowed.",
+    "A language-model completion identity is service-reported, not independent attestation; hashes support traceability, not guaranteed identical model reruns.",
+    "OpenAI quota/model unavailability yields explicit 503 for natural language. Guided SQL remains available if SQL and evidence are healthy.",
+    "Evidence writes are mandatory before returning an answer. Knowledge outages may return deterministic broker facts with knowledge unavailable and no fabricated citations."
+  ]
+}

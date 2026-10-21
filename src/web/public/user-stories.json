@@ -1,0 +1,242 @@
+{
+  "title": "Rogers | Fraud Intelligence — optional synthetic validation exercises",
+  "version": "1.3",
+  "scope": "Public synthetic demo. No sign-in or VPN required. Shared usage limits apply. Small synthetic Azure SQL Database; no real customer data. SQL MI / Oracle adapters and 1 TB scale validation are not included.",
+  "readinessPolicy": "A story is ready to exercise only when /api/status confirms synthetic=true and every required capability is explicitly true, and any required guided scenario is available. Missing capabilities, loading, and failures are blocked. Ready is not completed or validated.",
+  "walkthrough": {
+    "title": "From loss movement to a defensible investigation",
+    "durationMinutes": 9,
+    "preflight": "Allow 8–10 minutes. Open the public synthetic demo; no sign-in or VPN is required. Confirm service readiness first. These are expected synthetic fixture facts, not observed results. Run each request and compare with its real response; skip a blocked step rather than claiming success. Shared usage limits may require waiting before retrying.",
+    "closing": "Close with the evidence, not a causal claim: this read-only PoC supports investigation, not automatic rule changes, production readiness, or 1 TB validation."
+  },
+  "stories": [
+    {
+      "id": "FI-01",
+      "title": "Compare calendar-month CAD losses",
+      "asA": "a fraud analyst",
+      "iWant": "to compare two complete calendar months by channel",
+      "soThat": "I can identify where reported losses changed",
+      "requiredCapabilities": ["guided"],
+      "scenarioKind": "loss_comparison",
+      "action": "guided",
+      "actionLabel": "Open channel comparison →",
+      "presenter": {
+        "durationSeconds": 90,
+        "question": "Where did the CAD loss increase from August to September 2026 come from?",
+        "pointOut": [
+          "Confirm readiness, then run the server-defined channel comparison. Point to Guided · deterministic: no model is needed for these numbers.",
+          "Read the CAD totals and returned breakdown together. Complete calendar months are not daily-normalized; association is not causation."
+        ],
+        "expected": [
+          "Seed expectation: August CAD 1,000,000 → September CAD 1,240,000; change CAD +240,000 (+24%).",
+          "Seed expectation: Card-not-present CAD 690,000 → 930,000 (+240,000); Digital wallet 90,000 → 110,000 (+20,000); Card-present 220,000 → 200,000 (−20,000)."
+        ]
+      },
+      "steps": [
+        "Open Investigate and confirm Guided analytics is available in Connection & readiness.",
+        "Select the server-provided channel loss comparison for September 2026 versus August 2026.",
+        "Run the analysis and review the returned totals, channel breakdown, definition, and caveats."
+      ],
+      "acceptanceCriteria": [
+        "The page sends the scenario request to POST /api/analyze; it does not select a prewritten answer.",
+        "The periods are September 1 inclusive to October 1 exclusive and August 1 inclusive to September 1 exclusive.",
+        "The response identifies guided execution and synthetic data; monetary values are labeled CAD.",
+        "Verify each reported change against returned source totals and the metric definition. Missing values and an empty result are never displayed as zero.",
+        "API failure, no data, or denied access stays visible instead of displaying a successful sample answer."
+      ],
+      "dependencies": ["Public synthetic demo website; no sign-in or VPN required", "Available analytics broker and synthetic SQL source", "Server-defined loss_comparison scenario"]
+    },
+    {
+      "id": "FI-02",
+      "title": "Inspect rule false-positive share",
+      "asA": "a fraud operations analyst",
+      "iWant": "to understand rule outcomes with the correct denominator",
+      "soThat": "I do not confuse adjudicated-alert share with a population false-positive rate",
+      "requiredCapabilities": ["guided"],
+      "scenarioKind": "rule_quality",
+      "action": "guided",
+      "actionLabel": "Open rule comparison →",
+      "presenter": {
+        "durationSeconds": 90,
+        "question": "Did R017's adjudicated-alert false-positive share change, and what is the denominator?",
+        "pointOut": [
+          "Find R017 in the metric cards and per-channel breakdown. The expected counts are totals across channels. FP / (TP + FP) is an adjudicated-alert share, not population FP / (FP + TN).",
+          "Contrast a percentage-point change with a relative percent change. A monthly association cannot establish that a threshold change caused it."
+        ],
+        "expected": [
+          "Seed expectation: R017 August 10,200 / 15,000 = 68%; September 13,680 / 18,000 = 76%; change +8 percentage points.",
+          "The real response must supply the counts and caveats. A zero denominator would be undefined, not a measured 0%."
+        ]
+      },
+      "steps": [
+        "Open Investigate and select the rule-quality guided scenario.",
+        "Review current and previous adjudicated-alert counts, false positives, and false-positive shares.",
+        "Recalculate the reported share for one rule and inspect denominator caveats."
+      ],
+      "acceptanceCriteria": [
+        "False-positive share is false-positive adjudicated alerts divided by all adjudicated alerts in the returned cohort.",
+        "Percent units and percentage-point changes are distinct; a denominator of zero is not presented as a measured zero rate.",
+        "If true negatives are unavailable, the response does not claim a population false-positive rate.",
+        "No row, count, percentage, or recommendation is invented in the browser."
+      ],
+      "dependencies": ["Public synthetic demo website; no sign-in or VPN required", "Available guided analytics capability", "Server-defined rule_quality scenario", "Synthetic rule outcome data with adjudicated denominators"]
+    },
+    {
+      "id": "FI-03",
+      "title": "Look up an effective definition",
+      "asA": "an analyst reviewing an answer",
+      "iWant": "to retrieve a rule or metric definition effective on a chosen date",
+      "soThat": "I can interpret the result using the relevant documented version",
+      "requiredCapabilities": ["knowledge"],
+      "action": "knowledge",
+      "actionLabel": "Load R017 lookup →",
+      "presenter": {
+        "durationSeconds": 120,
+        "question": "What did R017 mean on the reporting date, and what changes when we move the effective date?",
+        "pointOut": [
+          "Load each example, then select Find definitions. Expand an actual excerpt; point to its version, effective date, document ID and chunk ID.",
+          "Compare 2026-09-30 with 2026-09-01, then use 2026-06-30 for the empty-result case. Hybrid retrieval may return nearest neighbors for an absent term; lexical absence does not guarantee no sources.",
+          "Inspect the policy-resolution decision and scope, not publication order. The policy register is authorized metadata; its date-eligible label is not a governing-policy decision. Optional service-provided scenarios prepare an unresolved-overlap or scoped-exception search without automatically submitting it."
+        ],
+        "expected": [
+          "Seed expectation: R017 version 2.3 is effective 2026-09-12; 8 attempts became 6 within 10 minutes. Retrieved context is not evidence of causation.",
+          "Before 2026-09-12, R017 version 2.3 must be excluded. Historical approved version 2.2 covers 2026-09-01. Before 2026-07-01, no seeded document is effective: 2026-06-30 should return available with zero sources and no-applicable-policy, not an outage.",
+          "Synthetic scope expectation: approved R017 version 2.4-qc supersedes 2.3 only in QC from 2026-09-20 until 2026-10-01 (exclusive). Future and draft versions must not govern September; unresolved overlaps require owner review rather than model selection."
+        ],
+        "examples": [
+          { "label": "R017 · reporting date", "query": "R017", "asOf": "2026-09-30" },
+          { "label": "Before R017 v2.3", "query": "R017", "asOf": "2026-09-01" },
+          { "label": "Before all documents", "query": "R017", "asOf": "2026-06-30" }
+        ]
+      },
+      "steps": [
+        "Open Policy library, enter R017 in definition search, and choose 2026-09-30.",
+        "Find definitions and expand a source excerpt.",
+        "Repeat with 2026-09-01 to exclude R017 version 2.3 and inspect historical approved version 2.2.",
+        "Repeat with 2026-06-30, before every seeded document, to demonstrate an actual empty result. Record the returned retrieval mode and status."
+      ],
+      "acceptanceCriteria": [
+        "GET /api/knowledge receives both the query and chosen asOf date.",
+        "Returned citations expose document ID, title, version, effective dates, chunk ID, and excerpt. The policy resolution separately exposes scope, policy-set version, evaluation timestamp and any unresolved conflicts.",
+        "A future-effective version is not returned for an earlier date; access filtering is enforced by the service, not a local role selector.",
+        "An available response with zero sources for 2026-06-30 demonstrates the empty case. A dependency failure is unavailable, not empty or replaced with local text.",
+        "Hybrid nearest-neighbor retrieval may return eligible sources for a lexically absent term. Report those sources honestly, not as an empty result or an automatically passed exercise."
+      ],
+      "dependencies": ["Public synthetic demo website; no sign-in or VPN required", "Available knowledge capability", "Seeded versioned synthetic documents", "Server-side effective-date and read-only demo-scope filtering"]
+    },
+    {
+      "id": "FI-04",
+      "title": "Reconstruct an answer from evidence",
+      "asA": "a reviewer",
+      "iWant": "to inspect and download an answer's provenance and citations",
+      "soThat": "I can trace the displayed result back to its request and definitions",
+      "requiredCapabilities": ["guided", "knowledge", "evidence"],
+      "scenarioKind": "loss_comparison",
+      "action": "evidence",
+      "actionLabel": "Inspect latest answer evidence →",
+      "presenter": {
+        "durationSeconds": 60,
+        "question": "Can a reviewer reconstruct the latest answer without trusting the narration?",
+        "pointOut": [
+          "Reuse the latest successful answer from this session. Inspect evidence and download the server JSON; if none exists, run the channel comparison first.",
+          "Compare answer ID, trace, typed request, source time, metric/template/prompt versions, SQL evidence references and citation chunk IDs. A download is not proof of retention or database isolation."
+        ],
+        "expected": [
+          "Seed expectation: source azure-sql-synthetic-fraud-v1, as of 2026-10-01T00:00:00Z. Answer and trace IDs are generated by the backend, not prewritten.",
+          "Evidence must contain the actual returned answer and request. Guided execution reports not-used-guided-v1 for the prompt version; do not invent missing citations or fields."
+        ]
+      },
+      "steps": [
+        "Run a guided analysis successfully.",
+        "Read its source excerpts, then select Inspect evidence below the result.",
+        "Download the server evidence JSON and compare its request, result, trace, and versions with the visible answer."
+      ],
+      "acceptanceCriteria": [
+        "The drawer fetches the real answer-specific /api/evidence endpoint rather than constructing a pretend audit record.",
+        "Answer ID, trace ID, source ID/as-of time, generated time, and metric/template/prompt versions are inspectable.",
+        "Document and chunk identifiers link the answer citations to included evidence. Report missing fields as a failed criterion, not an assumed match.",
+        "A failed or denied evidence request remains an error and does not offer a fabricated evidence download.",
+        "Downloading evidence does not by itself establish durable audit retention; separately verify the backend's storage and retention limitations."
+      ],
+      "dependencies": ["Public synthetic demo website; no sign-in or VPN required", "One successful answer with an evidence URL", "Available knowledge and evidence retrieval", "Evidence still retained by the backend"]
+    },
+    {
+      "id": "FI-05",
+      "title": "Observe invalid-request rejection",
+      "asA": "a PoC reviewer",
+      "iWant": "to send controlled unsupported, personal-data projection, and write-intent requests",
+      "soThat": "I can verify the actual request boundary instead of a scripted policy demonstration",
+      "requiredCapabilities": ["guided"],
+      "action": "boundary",
+      "actionLabel": "Open boundary checks →",
+      "presenter": {
+        "durationSeconds": 90,
+        "question": "What happens when a request asks for an unsupported grouping, identifying fields, or a write?",
+        "pointOut": [
+          "Inspect the fixed request, then send each of the three boundary checks. These contain field names, not personal data or executable SQL.",
+          "Read each actual status, error code, message and trace. Ask the backend owner to verify rejection before database access; the browser cannot establish this."
+        ],
+        "expected": [
+          "Contract expectation, not an observed rejection: HTTP 400 + INVALID_REQUEST with a relevant message for all three requests.",
+          "A denied request, usage limit, outage, NO_DATA or COHORT_SUPPRESSED is not proof of validation. Any accepted invalid request needs investigation."
+        ]
+      },
+      "steps": [
+        "In Check the request boundary, inspect the fixed JSON for Unsupported grouping and send it.",
+        "Repeat for Personal-data projection field and Write-intent field. These use field names only, not real personal data or executable SQL.",
+        "Record each actual HTTP status, error code, message, and trace ID if supplied.",
+        "Have the backend owner inspect those traces to confirm rejection occurred before database access."
+      ],
+      "acceptanceCriteria": [
+        "Each request is sent to the real POST /api/analyze endpoint and rejected by server validation or policy.",
+        "HTTP 400 with error code INVALID_REQUEST and a relevant message is observable. A 401/403, dependency outage, network error, NO_DATA, or COHORT_SUPPRESSED response is not counted as proof of input rejection.",
+        "An unexpected 2xx response is visibly flagged for investigation, never labeled a passed check.",
+        "Server-side evidence, not a browser claim, establishes that zero database reads/writes were attempted for the rejected request.",
+        "No real personal data, SQL mutation, local authentication simulation, or local role picker is used."
+      ],
+      "dependencies": ["Public synthetic demo website; no sign-in or VPN required", "Reachable guided analytics API", "Strict server request schema and policy checks", "Backend trace access for pre-query rejection verification"]
+    },
+    {
+      "id": "FI-06",
+      "title": "Ask a bounded question in natural language",
+      "asA": "a fraud analyst",
+      "iWant": "to ask a supported aggregate question in my own words",
+      "soThat": "I can obtain model-planned analytics without writing a query",
+      "requiredCapabilities": ["naturalLanguage"],
+      "action": "question",
+      "actionLabel": "Load supported question →",
+      "presenter": {
+        "durationSeconds": 90,
+        "question": "Can the model plan the same bounded analysis, and refuse an unrelated request?",
+        "pointOut": [
+          "Open Ask AI or use the original composer. Load the supported question and submit it unchanged. Each question is standalone; previous turns are not context. Compare the full response with FI-01 and inspect natural-language mode plus the actual model deployment in evidence.",
+          "Load the unrelated weather question next. Only HTTP 422 + UNSUPPORTED_QUESTION demonstrates this refusal; an outage or denied access does not."
+        ],
+        "expected": [
+          "For the supported channel comparison, the same seeded CAD 1,000,000 → 1,240,000 totals are expected. The broker, not the model or browser, computes every metric.",
+          "Contract expectation: the unrelated question is refused without a fallback answer. A guided response must never be relabeled as model execution."
+        ],
+        "examples": [
+          { "label": "Supported comparison", "question": "How did CAD fraud losses by channel change from August to September 2026?" },
+          { "label": "Unsupported question", "question": "What is the weather forecast for Ottawa tomorrow?" }
+        ]
+      },
+      "steps": [
+        "Confirm naturalLanguage=true in the reported capabilities and review the regional model's deployment detail and API-reported limitations in Connection & readiness.",
+        "Ask: How did CAD fraud losses by channel change from August to September 2026?",
+        "Compare the response's execution mode, metrics, caveats, and trace with the corresponding guided analysis if available.",
+        "Ask: What is the weather forecast for Ottawa tomorrow? Inspect the actual HTTP status and error code; do not count an outage as model refusal."
+      ],
+      "acceptanceCriteria": [
+        "The composer is disabled while natural-language capability is false, missing, or unreachable.",
+        "The question is sent unchanged to POST /api/ask, and a successful response reports natural-language provenance.",
+        "The backend executes the real regional model planner; a deterministic guided result is never relabeled as model execution.",
+        "Unsupported questions and model failures remain visible errors. There is no keyword-based client answer or successful fallback.",
+        "The assistant reuses the original composer, blocks duplicate analysis submissions, and keeps each question paired with its own pending, successful or failed response. Each question is limited to 1,000 characters.",
+        "The assistant retains at most eight standalone turns in tab memory only. Full analysis, metrics, citations and evidence use actual API responses. HTTP 429 and 503 remain errors with manual retry, never fabricated answers.",
+        "Regional residency is verified through deployed backend/resource configuration, not inferred from UI wording."
+      ],
+      "dependencies": ["Public synthetic demo website; no sign-in or VPN required", "Available natural-language capability explicitly reported by the API", "Actual workload and model deployment; verify placement in the deployed resource configuration and API-reported details", "Planner, broker, and typed-query policy integration"]
+    }
+  ]
+}

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Fraud Intelligence | Public synthetic demo</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workspace</a>
+  <div class="utility">
+    <div class="shell row between wrap">
+      <span class="synthetic-tag">A space to explore. Not real customer data.</span>
+      <div class="row"><span id="identity">Public demo · No sign-in</span><button id="theme-toggle" class="utility-theme" type="button" aria-label="Switch color theme">Dark theme</button></div>
+    </div>
+  </div>
+  <header class="site-header">
+    <div class="shell brand-row">
+      <a class="brand" href="#investigate" aria-label="Fraud Intelligence home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>Fraud<span class="brand-light"> Intelligence</span></span>
+      </a>
+      <nav id="primary-nav" class="primary-nav" aria-label="Workspace">
+        <a href="#investigate" data-page="investigate" aria-current="page">Explore</a>
+        <a href="#knowledge" data-page="knowledge">Rule library</a>
+        <a href="#stories" data-page="stories">Demonstration <span id="story-count" class="nav-count">6</span></a>
+        <a href="#documentation" data-page="documentation">Platform docs</a>
+      </nav>
+      <button id="assistant-open-header" class="header-search" type="button" aria-controls="assistant-panel" aria-expanded="false"><span class="search-symbol" aria-hidden="true"></span><span class="search-label">Ask about the data</span></button>
+      <button id="menu-toggle" class="menu-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Open navigation"><span aria-hidden="true">☰</span></button>
+    </div>
+  </header>
+  <div class="info-ribbon"><div class="shell row between wrap"><p>Synthetic data only. <span>No actual customer records.</span></p><button id="connection-open" class="connection-button" type="button"><span class="status-dot" aria-hidden="true"></span><span id="connection-label">Checking availability</span><span aria-hidden="true">›</span></button></div></div>
+  <main id="main" class="shell" tabindex="-1">
+    <div id="connection-alert" class="notice" role="status" hidden></div>
+    <section id="walkthrough" class="panel walkthrough" aria-labelledby="walkthrough-title" tabindex="-1" hidden>
+      <div class="row between wrap">
+        <div><p id="walkthrough-step" class="eyebrow">Presenter walkthrough</p><h2 id="walkthrough-title"></h2></div>
+        <button id="walkthrough-close" class="button quiet compact" type="button">Hide presenter guide</button>
+      </div>
+      <p id="walkthrough-question" class="presenter-question"></p>
+      <details id="walkthrough-notes" open>
+        <summary>Presenter cues & expected fixtures — not live results</summary>
+        <div class="presenter-notes">
+          <div><h3>What to point out</h3><ul id="walkthrough-points"></ul></div>
+          <div><h3>Expected only · compare with the API</h3><ul id="walkthrough-expected"></ul></div>
+        </div>
+      </details>
+      <p id="walkthrough-observation" class="small observation" role="status"></p>
+      <p id="walkthrough-availability" class="small muted"></p>
+      <div class="row wrap walkthrough-actions">
+        <button id="walkthrough-previous" class="button quiet compact" type="button">← Previous step</button>
+        <button id="walkthrough-action" class="button primary compact" type="button">Open exercise</button>
+        <button id="walkthrough-next" class="button secondary compact" type="button">Next step →</button>
+        <a class="text-link" href="#stories">All six stories</a>
+      </div>
+    </section>
+    <section id="page-investigate" class="page" aria-labelledby="investigate-title">
+      <div class="hero">
+        <div class="hero-primary">
+          <div class="hero-copy">
+            <p class="eyebrow">Fraud Intelligence / Explore</p>
+            <h1 id="investigate-title">Big questions.<br>Clearer answers.</h1>
+            <p class="hero-description">Make sense of fraud losses and rule outcomes. Ask in your own words, then explore the evidence behind the answer.</p>
+            <div class="row wrap hero-actions">
+              <button id="assistant-open-hero" class="button primary" type="button" aria-controls="assistant-panel" aria-expanded="false">Ask AI <span aria-hidden="true">›</span></button>
+              <a class="text-link" href="#guided">Explore analyses <span aria-hidden="true">›</span></a>
+            </div>
+            <p class="scope-note">A public, read-only synthetic demo.<br>August–September 2026 · Shared usage limits.</p>
+          </div>
+          <figure class="signal-illustration" aria-labelledby="signal-caption">
+            <div class="signal-path" aria-hidden="true"></div>
+            <div class="signal-question"><span class="illustration-label">Your question</span><strong>What changed<br>between months?</strong><span class="question-spark" aria-hidden="true">?</span></div>
+            <div class="signal-gate"><span class="gate-symbol" aria-hidden="true">↳</span><div><span class="illustration-label">Governed analysis</span><strong>Query. Check. Explain.</strong></div></div>
+            <div class="signal-evidence"><span class="evidence-tab" aria-hidden="true">↗</span><span class="illustration-label">Traceable evidence</span><strong>Every source.<br>Open to inspection.</strong><div class="document-lines" aria-hidden="true"><i></i><i></i><i></i></div></div>
+            <figcaption id="signal-caption">How it works · Illustration, not an answer</figcaption>
+          </figure>
+        </div>
+        <aside class="hero-secondary" aria-labelledby="tour-title">
+          <p class="eyebrow">A closer look</p>
+          <h2 id="tour-title">Follow every answer back to its source.</h2>
+          <p>See how a question becomes an analysis you can inspect. Six guided stories. One connected experience.</p>
+          <div class="tour-map" aria-hidden="true"><span>01</span><i></i><span>02</span><i></i><span>03</span><i></i><span>…</span></div>
+          <p class="tour-duration">9 minutes. Your own pace.</p>
+          <button id="walkthrough-start-hero" class="button tour-button" type="button" disabled>Take the walkthrough <span aria-hidden="true">›</span></button>
+        </aside>
+      </div>
+      <nav class="category-row" aria-label="Explore by topic">
+        <a href="#guided"><span class="category-icon" aria-hidden="true">↗</span><span>Understand losses<small>Compare movement over time</small></span><span aria-hidden="true">›</span></a>
+        <a href="#guided"><span class="category-icon" aria-hidden="true">◎</span><span>Explore rule quality<small>Look closer at alert outcomes</small></span><span aria-hidden="true">›</span></a>
+        <a href="#knowledge"><span class="category-icon" aria-hidden="true">≡</span><span>Find the definition<small>See what the numbers mean</small></span><span aria-hidden="true">›</span></a>
+      </nav>
+      <section id="guided" class="section" aria-labelledby="guided-title">
+        <div class="section-heading centered"><div><p class="eyebrow">Start with a good question</p><h2 id="guided-title">Two ways to see the bigger picture.</h2></div></div>
+        <p class="muted section-intro centered">Choose an available guided analysis. Real API responses, synthetic data. No model required.</p>
+        <div id="scenario-list" class="scenario-grid" aria-live="polite"><p class="muted">Loading available analyses…</p></div>
+      </section>
+      <section id="question" class="question-card" aria-labelledby="question-title" tabindex="-1">
+        <div class="question-heading"><div><p class="eyebrow">Make it your own</p><h2 id="question-title">Your next question starts here.</h2><p class="muted">Each question is standalone. Include the metric, grouping and both months.</p></div></div>
+        <div id="question-composer-home">
+          <div id="ask-composer">
+            <div class="row between wrap composer-readiness"><p id="question-availability" class="small muted">Checking model readiness…</p><span class="pill" id="model-badge">Pending</span></div>
+            <form id="ask-form">
+              <div id="question-examples" class="row wrap example-actions" role="group" aria-label="Load a question example"></div>
+              <label for="question-input" class="sr-only">Your synthetic fraud analytics question</label>
+              <textarea id="question-input" name="question" rows="3" minlength="8" maxlength="1000" placeholder="How did CAD fraud losses by channel change from August to September 2026?" aria-describedby="question-help question-availability question-count" required disabled></textarea>
+              <div class="row between wrap composer-meta"><span id="question-count" class="small muted">0 / 1,000 characters</span><span class="small muted">Ctrl / ⌘ + Enter to send</span></div>
+              <p id="question-help" class="small muted">Synthetic aggregates only. Never enter personal data, credentials, or account numbers. Earlier questions are not sent as context.</p>
+              <div class="row between wrap composer-actions"><span id="question-validation" class="small" role="alert"></span><button id="ask-submit" class="button primary" type="submit" disabled>Ask a question <span aria-hidden="true">→</span></button></div>
+            </form>
+          </div>
+        </div>
+        <p id="composer-away" class="small muted" hidden>The shared question composer is open in the AI assistant. Close the assistant to continue here.</p>
+      </section>
+      <section id="analysis" class="section analysis-section" aria-labelledby="analysis-title" tabindex="-1">
+        <div class="section-heading"><h2 id="analysis-title">Your analysis</h2><span id="analysis-state" class="small muted">Not run yet</span></div>
+        <div id="analysis-announcement" class="sr-only" role="status" aria-live="polite"></div>
+        <div id="analysis-content"><div class="empty-state analysis-empty"><p>Your results, caveats and sources will appear here after you run an analysis. Nothing has been run yet.</p></div></div>
+      </section>
+    </section>
+    <section id="page-knowledge" class="page" aria-labelledby="knowledge-title" hidden>
+      <div class="page-intro"><p class="eyebrow">Definitions with context</p><h1 id="knowledge-title">Know what the numbers mean.</h1><p class="muted">Find the source definitions and rule documentation returned by the knowledge service, for a specific effective date.</p></div>
+      <section class="panel library-panel" aria-labelledby="policy-library-title">
+        <div class="section-heading"><div><h2 id="policy-library-title">Policy register</h2><p class="small muted">Authorized metadata only · not a replacement for retrieved policy evidence</p></div></div>
+        <form id="policy-form" class="search-form">
+          <div class="field"><label for="policy-filter">Filter returned metadata</label><input id="policy-filter" type="search" maxlength="200" placeholder="Policy, version, rule or owner" aria-describedby="policy-filter-help"></div>
+          <div class="field date-field"><label for="policy-date">Timeline reference date</label><input id="policy-date" type="date" value="2026-09-30" required></div>
+          <button id="policy-refresh" type="submit" class="button secondary" disabled>Load policy register</button>
+          <p id="policy-filter-help" class="small muted full-width">Date labels describe returned metadata, not a governing-policy decision. Use definition search below to resolve scope and precedence. End dates are exclusive.</p>
+        </form>
+        <p id="policy-availability" class="small muted" role="status">Waiting for verified synthetic-data access.</p>
+        <div id="policy-register" class="section" aria-live="polite"><div class="empty-state"><p>Policy history has not been loaded. No local policy snapshot is substituted.</p></div></div>
+      </section>
+      <div class="section-heading section"><h2>Retrieve definitions &amp; citations</h2></div>
+      <form id="knowledge-form" class="panel search-form">
+        <div id="knowledge-examples" class="row wrap example-actions full-width" role="group" aria-label="Load a knowledge example"></div>
+        <div class="field"><label for="knowledge-query">Definition or rule</label><input id="knowledge-query" type="search" maxlength="200" placeholder="For example, net fraud loss or R017" aria-describedby="knowledge-help" required disabled></div>
+        <div class="field date-field"><label for="knowledge-date">Effective as of</label><input id="knowledge-date" type="date" required disabled></div>
+        <button id="knowledge-submit" class="button primary" type="submit" disabled>Find definitions <span aria-hidden="true">→</span></button>
+        <div class="knowledge-scope full-width">
+          <div class="field"><label for="knowledge-subject">Policy subject</label><select id="knowledge-subject" disabled><option value="">Determine from search terms</option></select></div>
+          <div class="field"><label for="knowledge-channel">Channel scope</label><select id="knowledge-channel" disabled><option value="">All authorized channels</option><option>Card-not-present</option><option>Digital wallet</option><option>Card-present</option></select></div>
+          <div class="field"><label for="knowledge-province">Province scope</label><select id="knowledge-province" disabled><option value="">All authorized provinces</option><option>ON</option><option>QC</option><option>BC</option></select></div>
+        </div>
+        <p id="knowledge-availability" class="small muted full-width">Checking knowledge availability…</p>
+        <p id="knowledge-help" class="small muted full-width">Examples fill the form; select Find definitions to send it. The service resolves applicable versions and scoped conflicts. Hybrid search can return nearest neighbors; inspect each excerpt.</p>
+      </form>
+      <div id="knowledge-results" class="section" aria-live="polite"><div class="empty-state"><h2>Use the right definition, at the right time.</h2><p>Search results will show document versions, effective dates, chunk identifiers, and excerpts exactly as returned.</p></div></div>
+    </section>
+    <section id="page-stories" class="page" aria-labelledby="stories-title" hidden>
+      <div class="page-intro"><p class="eyebrow">Your 9-minute demonstration</p><h1 id="stories-title">Small stories. Verifiable outcomes.</h1><p class="muted">Follow six practical exercises from loss movement to evidence and safe boundaries. Expected fixture notes are not live results, and readiness is not a passed exercise.</p></div>
+      <div class="story-summary panel">
+        <p id="walkthrough-preflight" class="full-width small muted">Loading presenter guidance…</p>
+        <span id="stories-readiness" role="status">Checking exercise readiness…</span>
+        <div class="row wrap"><button id="walkthrough-start" class="button primary" type="button" disabled>Start 9-minute walkthrough →</button><a class="text-link" href="/user-stories.json" download="fraud-intelligence-user-stories.json">Download catalog <span aria-hidden="true">↓</span></a></div>
+      </div>
+      <div id="stories-list" class="stories-grid"></div>
+      <section id="boundary-checks" class="panel boundary-section" aria-labelledby="boundary-title" tabindex="-1">
+        <p class="eyebrow">Controlled negative tests</p><h2 id="boundary-title">Check the request boundary</h2>
+        <p class="muted">Send one fixed invalid request to the real analytics API. No SQL is executed by this page. A rejection is an observed API response, not proof of database isolation; inspect the server trace separately.</p>
+        <form id="boundary-form" class="boundary-form">
+          <div class="field"><label for="boundary-case">Request to test</label><select id="boundary-case"><option value="unsupported">Unsupported grouping</option><option value="pii">Personal-data projection field</option><option value="write">Write-intent field</option></select></div>
+          <button id="boundary-submit" class="button secondary" type="submit" disabled>Send boundary check</button>
+        </form>
+        <details class="request-preview"><summary>Inspect the request before sending</summary><pre id="boundary-payload"></pre></details>
+        <div id="boundary-result" aria-live="polite"></div>
+      </section>
+      <p id="walkthrough-closing" class="small muted section"></p>
+    </section>
+    <section id="page-documentation" class="page" aria-labelledby="documentation-title" hidden>
+      <div class="page-intro">
+        <p class="eyebrow">Architecture references</p>
+        <h1 id="documentation-title">Platform documentation</h1>
+        <p class="muted">Use the capabilities Fabric and Foundry provide. Configure and connect them for fraud analytics rather than build separate governance, evaluation or monitoring systems.</p>
+      </div>
+      <section class="panel documentation-summary" aria-labelledby="documentation-scope-title">
+        <h2 id="documentation-scope-title">Platform capability is not deployment evidence.</h2>
+        <p><strong>Fabric and Foundry are target platforms, not deployed migrations.</strong> The existing cloud PoC uses synthetic Azure SQL Database data, an Azure OpenAI query planner and Azure AI Search. The local preview uses fixtures, not cloud connections.</p>
+        <p class="small muted">These architecture references are not policy citations or answer evidence. They do not establish real-source connectivity, Canadian residency or immutable/WORM retention. Inspect Service details for the current connection; these notes are not a live resource inventory.</p>
+      </section>
+      <p id="documentation-link-note" class="small muted section">Official Microsoft Learn references, reviewed October 20, 2026. Each document opens in a new tab without sending this page's referrer. Online documentation requires internet access and can change; this reference view does not call the analytics or policy APIs.</p>
+      <div class="documentation-grid">
+        <article class="panel documentation-card" data-capability="data" aria-labelledby="documentation-data-title">
+          <p class="eyebrow">01 / Data platform</p>
+          <h2 id="documentation-data-title">Data ingestion and analytics</h2>
+          <dl class="documentation-ownership">
+            <dt>Platform provides</dt><dd>Fabric pipelines and connectors, Warehouse SQL processing and OneLake analytical storage.</dd>
+            <dt>Configure or integrate</dt><dd>Connect the actual SQL MI or Oracle source; define fraud tables, metric definitions, approved extracts and freshness. Keep runtime access restricted to approved read-only operations.</dd>
+          </dl>
+          <ul class="documentation-links">
+            <li><a href="https://learn.microsoft.com/en-us/fabric/data-factory/connector-azure-sql-database-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Azure SQL Database connector overview</a><p>Example of supported ingestion activities, authentication and gateway options; not proof of a SQL MI or Oracle integration.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">What is Fabric Data Warehouse?</a><p>T-SQL warehousing, ingestion and analytics capabilities.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/fabric/onelake/onelake-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">OneLake, the unified data lake</a><p>Shared analytical storage, open formats and shortcuts.</p></li>
+          </ul>
+          <p class="documentation-caveat">A Warehouse can support writes; selecting it does not enforce read-only access. A shortcut can reference data without migrating or copying it.</p>
+        </article>
+        <article class="panel documentation-card" data-capability="governance" aria-labelledby="documentation-governance-title">
+          <p class="eyebrow">02 / Governance</p>
+          <h2 id="documentation-governance-title">Data security and governance</h2>
+          <dl class="documentation-ownership">
+            <dt>Platform provides</dt><dd>Fabric access controls, lineage, classification and auditing, with Microsoft Purview integration and information protection.</dd>
+            <dt>Configure or integrate</dt><dd>Assign ownership, user and workload access, classifications, sensitivity labels and policies. Confirm licensing and which assets, exports and network configurations are supported.</dd>
+          </dl>
+          <ul class="documentation-links">
+            <li><a href="https://learn.microsoft.com/en-us/fabric/governance/governance-compliance-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Governance and compliance in Microsoft Fabric</a><p>Built-in governance capabilities and the integration boundary with Purview.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/fabric/governance/information-protection" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Information protection in Fabric</a><p>Sensitivity labels, inheritance, protection and licensing prerequisites.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/purview/register-scan-fabric-tenant" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Connect a Fabric tenant to Microsoft Purview</a><p>Registration, authentication and metadata/lineage scanning setup.</p></li>
+          </ul>
+          <p class="documentation-caveat">Some capabilities require additional licensing or are in preview. The linked Purview scanning integration does not support Fabric tenant/workspace private links; resolve this compatibility constraint in the design.</p>
+        </article>
+        <article class="panel documentation-card" data-capability="models" aria-labelledby="documentation-models-title">
+          <p class="eyebrow">03 / AI execution</p>
+          <h2 id="documentation-models-title">Models and AI execution</h2>
+          <dl class="documentation-ownership">
+            <dt>Platform provides</dt><dd>Foundry model deployments, processing-boundary choices and tooling for AI applications.</dd>
+            <dt>Configure or integrate</dt><dd>Select an available model/version and deployment type. Define fraud-specific prompts and permitted tools, then connect broker-calculated numbers and approved knowledge to the explanation flow.</dd>
+          </dl>
+          <ul class="documentation-links">
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Understanding deployment types in Microsoft Foundry Models</a><p>Processing boundaries and consumption/provisioned deployment choices.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Region availability for Foundry Models sold by Azure</a><p>Model/version and deployment-category availability by region.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/toolbox-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">What is Toolbox in Microsoft Foundry?</a><p>Reusable tools, authentication and version management for supported application patterns.</p></li>
+          </ul>
+          <p class="documentation-caveat">The existing PoC model plans typed queries; it is not a new grounded-synthesis implementation. Global and Data Zone deployments do not establish Canada-only processing. Confirm the exact model/deployment processing geography, not just where it can be created; tool features can be in preview.</p>
+        </article>
+        <article class="panel documentation-card" data-capability="grounding" aria-labelledby="documentation-grounding-title">
+          <p class="eyebrow">04 / Knowledge</p>
+          <h2 id="documentation-grounding-title">Knowledge grounding</h2>
+          <dl class="documentation-ownership">
+            <dt>Platform provides</dt><dd>Foundry and Azure AI Search retrieval, grounding and citation building blocks.</dd>
+            <dt>Configure or integrate</dt><dd>Supply approved policies, SOPs, data dictionaries and rule history. Maintain document permissions and updates, and apply business-specific effective dates, scoped supersession and conflict handling.</dd>
+          </dl>
+          <ul class="documentation-links">
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/ai-search" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Connect an Azure AI Search index to Foundry agents</a><p>Indexed grounding, retrieval settings and source citations.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/search/retrieval-augmented-generation-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">RAG and generative AI in Azure AI Search</a><p>Content preparation, classic retrieval and agentic retrieval approaches.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/search/search-document-level-access-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Document-level access control in Azure AI Search</a><p>Security filters and supported token-based permission enforcement.</p></li>
+          </ul>
+          <p class="documentation-caveat">Service authentication alone is not document authorization. Native permission features and agentic planning have preview limitations. The linked private Search tool setup requires managed identity and standard VNet injection. Retrieval alone does not decide which conflicting policy governs.</p>
+        </article>
+        <article class="panel documentation-card" data-capability="evaluation" aria-labelledby="documentation-evaluation-title">
+          <p class="eyebrow">05 / Quality and operations</p>
+          <h2 id="documentation-evaluation-title">Evaluation and observability</h2>
+          <dl class="documentation-ownership">
+            <dt>Platform provides</dt><dd>Foundry evaluation, monitoring, OpenTelemetry tracing and Application Insights integration.</dd>
+            <dt>Configure or integrate</dt><dd>Supply representative fraud questions, independently calculated expected results and quality thresholds. Configure instrumentation, alerts, access, retention and telemetry destinations.</dd>
+          </dl>
+          <ul class="documentation-links">
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/observability" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Observability in generative AI</a><p>The platform evaluation, monitoring and tracing capabilities behind the architecture.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/cloud-evaluation" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Introduction to cloud evaluation with Microsoft Foundry SDK</a><p>Dataset and response evaluation workflows with project/model prerequisites.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/observability/how-to/trace-agent-setup" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Set up tracing for AI agents in Microsoft Foundry</a><p>Connect Application Insights and inspect instrumented executions.</p></li>
+          </ul>
+          <p class="documentation-caveat">Evaluations can incur model consumption charges; feature, region and network restrictions apply. Judge-model scores do not prove exact numerical correctness. Tracing and retention are not immutable/WORM evidence guarantees.</p>
+        </article>
+        <article class="panel documentation-card" data-capability="security" aria-labelledby="documentation-security-title">
+          <p class="eyebrow">06 / Deployment boundaries</p>
+          <h2 id="documentation-security-title">Identity, private networking and residency</h2>
+          <dl class="documentation-ownership">
+            <dt>Platform provides</dt><dd>Entra identity, supported private connectivity controls and region-associated capacity/deployment options.</dd>
+            <dt>Configure or integrate</dt><dd>Validate a supported Canadian configuration, user access, dependency endpoints and outbound paths. Resolve the existing US diagnostic route before claiming a Canada-only solution.</dd>
+          </dl>
+          <ul class="documentation-links">
+            <li><a href="https://learn.microsoft.com/en-us/fabric/security/security-overview" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Security in Microsoft Fabric</a><p>Authentication, permissions and workload-specific connectivity controls.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/fabric/admin/service-admin-premium-multi-geo" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Multi-Geo support for Fabric</a><p>Capacity-region placement and documented metadata/transit exceptions.</p></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/foundry/how-to/configure-private-link" target="_blank" rel="noopener noreferrer" aria-describedby="documentation-link-note">Configure network isolation for Microsoft Foundry</a><p>Inbound private endpoints, DNS and outbound network isolation setup.</p></li>
+          </ul>
+          <p class="documentation-caveat">Private access is not a blanket residency guarantee. Fabric metadata/transit exceptions, model processing geography, telemetry and tool dependencies must all be assessed. Private inbound endpoints do not automatically secure every outbound connection.</p>
+        </article>
+      </div>
+      <section class="panel documentation-proof" aria-labelledby="documentation-proof-title">
+        <h2 id="documentation-proof-title">What remains solution-specific</h2>
+        <p>Fraud data modelling and metric definitions, controlled data access, business prompts, policy applicability, grounded explanations and answer-level evidence. Use native platform services for the surrounding capabilities.</p>
+        <p><strong>Two requirements still need explicit proof:</strong> correct numerical answers against independently calculated expectations, and acceptable performance over the approximately 1 TB source under a representative workload. Platform documentation and small synthetic-fixture results do not establish either production requirement.</p>
+      </section>
+    </section>
+    <details id="service-details" class="service-details">
+      <summary>Service details <span class="small">Availability &amp; connected source</span></summary>
+      <div class="service-details-body"><div><h2 id="readiness-title">Connected services</h2><div id="service-list" class="service-list" aria-live="polite"></div></div><div class="source-note"><span class="overline">Reported source</span><p id="source-label">Waiting for the API</p><dl class="metadata"><dt>Reporting window</dt><dd id="reporting-window">Loading available periods…</dd><dt>Reporting dates</dt><dd id="reporting-dates">Dates are provided by the analytics service.</dd><dt>Source timestamp</dt><dd id="snapshot-date">Awaiting source timestamp</dd></dl><button id="refresh-status" class="text-link" type="button">Refresh connection <span aria-hidden="true">↻</span></button></div></div>
+    </details>
+    <footer class="footer">
+      <div><strong>Fraud Intelligence</strong><p>Explore with confidence. Inspect the evidence.</p><p>Public synthetic demo · Read-only · No customer records.</p></div>
+      <p>Rogers-inspired concept, not an official Rogers portal.<br>SQL MI / Oracle adapters and 1 TB scale validation are separate future work.</p>
+    </footer>
+  </main>
+  <button id="assistant-toggle" class="button primary assistant-launcher" type="button" aria-controls="assistant-panel" aria-expanded="false"><span aria-hidden="true">✦</span> Ask AI <span class="assistant-launcher-note">Synthetic data</span></button>
+  <dialog id="assistant-panel" class="assistant-panel" aria-labelledby="assistant-title" aria-describedby="assistant-description">
+    <header class="assistant-heading">
+      <div class="row between"><div><p class="eyebrow">Public synthetic demo</p><h2 id="assistant-title">Your AI analyst</h2></div><button id="assistant-close" class="button quiet compact" type="button" aria-label="Close AI assistant">Close ×</button></div>
+      <p id="assistant-description" class="small muted">August–September 2026 · Synthetic data only. Each question stands alone; this is not a contextual conversation.</p>
+    </header>
+    <div id="assistant-scroll" class="assistant-scroll">
+      <div class="assistant-intro"><span class="feature-icon" aria-hidden="true">✦</span><h3>Explore the data, not a script.</h3><p class="small muted">Choose a question or write your own. Answers use the analytics API; metrics, citations and evidence appear only when returned.</p></div>
+      <div id="assistant-suggestions" class="assistant-suggestions" role="group" aria-label="Load a supported standalone question"></div>
+      <div class="row between wrap assistant-history-heading"><h3>Questions in this tab</h3><span class="small muted">Up to 8 · cleared on reload</span></div>
+      <p id="assistant-empty" class="small muted">No questions sent yet. Loading a suggestion does not submit it.</p>
+      <div id="assistant-history" class="assistant-history" aria-label="Standalone questions and API responses"></div>
+    </div>
+    <div id="assistant-announcement" class="sr-only" role="status" aria-live="polite"></div>
+    <div id="assistant-composer-home" class="assistant-composer"></div>
+  </dialog>
+  <dialog id="detail-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-heading"><div><p class="eyebrow" id="dialog-kicker">Workspace details</p><h2 id="dialog-title">Connection details</h2></div><button id="dialog-close" class="button quiet compact" type="button" aria-label="Close details">Close <span aria-hidden="true">×</span></button></div>
+    <div id="dialog-body"></div>
+  </dialog>
+  <noscript><div class="noscript-message">JavaScript is required to connect to this workspace. No analytics have been run.</div></noscript>
+</body>
+</html>

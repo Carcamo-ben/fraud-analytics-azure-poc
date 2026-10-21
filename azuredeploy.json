@@ -1,0 +1,1233 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.45.15.27210",
+      "templateHash": "2469199066489251066"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "canadaeast",
+      "allowedValues": [
+        "canadacentral",
+        "canadaeast"
+      ]
+    },
+    "aiLocation": {
+      "type": "string",
+      "defaultValue": "canadaeast",
+      "allowedValues": [
+        "canadacentral",
+        "canadaeast"
+      ]
+    },
+    "authClientId": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "allowedUserOid": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "sqlAdminObjectId": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "metadata": {
+        "description": "Customer-owned Entra user or group that receives SQL administration; never a runtime identity."
+      }
+    },
+    "sqlAdminLogin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sqlAdminPrincipalType": {
+      "type": "string",
+      "defaultValue": "Group",
+      "allowedValues": [
+        "User",
+        "Group"
+      ]
+    },
+    "deploymentId": {
+      "type": "string",
+      "defaultValue": "[newGuid()]",
+      "metadata": {
+        "description": "Unique lifecycle ownership marker. Preserve this value when adopting a portal deployment."
+      }
+    },
+    "bootstrapEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Temporary setup privileges. Portal deployments MUST leave false; Deploy.ps1 manages the bounded setup lifecycle."
+      }
+    },
+    "ownerTag": {
+      "type": "string",
+      "metadata": {
+        "description": "Customer contact or team; no personal defaults."
+      }
+    },
+    "reviewAfter": {
+      "type": "string",
+      "metadata": {
+        "description": "Review date YYYY-MM-DD; a tag is not a budget or automatic deletion."
+      }
+    },
+    "chatModelName": {
+      "type": "string",
+      "defaultValue": "gpt-4.1-mini"
+    },
+    "chatModelVersion": {
+      "type": "string",
+      "defaultValue": "2025-04-14"
+    },
+    "chatCapacity": {
+      "type": "int",
+      "defaultValue": 10,
+      "minValue": 1,
+      "maxValue": 100
+    },
+    "embeddingModelName": {
+      "type": "string",
+      "defaultValue": "text-embedding-3-small",
+      "allowedValues": [
+        "text-embedding-3-small"
+      ],
+      "metadata": {
+        "description": "Current runtime requires 1536-dimensional text-embedding-3-small. No Global/DataZone deployments."
+      }
+    },
+    "embeddingModelVersion": {
+      "type": "string",
+      "defaultValue": "1"
+    },
+    "embeddingCapacity": {
+      "type": "int",
+      "defaultValue": 10,
+      "minValue": 1,
+      "maxValue": 100
+    },
+    "publicDemoEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Explicitly expose only the synthetic analyst website without user sign-in."
+      }
+    },
+    "publicDemoUserOid": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Dedicated synthetic public-demo identity; must differ from authenticated users."
+      }
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "appNames",
+        "count": "[length(variables('roles'))]",
+        "input": "[format('{0}-{1}', variables('base'), variables('roles')[copyIndex('appNames')])]"
+      },
+      {
+        "name": "integrationSubnets",
+        "count": "[length(variables('subnetNames'))]",
+        "input": {
+          "name": "[variables('subnetNames')[copyIndex('integrationSubnets')]]",
+          "properties": {
+            "addressPrefix": "[variables('subnetPrefixes')[copyIndex('integrationSubnets')]]",
+            "defaultOutboundAccess": false,
+            "networkSecurityGroup": {
+              "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-app-nsg', variables('base')))]"
+            },
+            "delegations": [
+              {
+                "name": "app-service",
+                "properties": {
+                  "serviceName": "Microsoft.Web/serverFarms"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "commonAppSettings",
+        "count": "[length(items(variables('commonSettings')))]",
+        "input": {
+          "name": "[items(variables('commonSettings'))[copyIndex('commonAppSettings')].key]",
+          "value": "[items(variables('commonSettings'))[copyIndex('commonAppSettings')].value]"
+        }
+      },
+      {
+        "name": "appEndpointTargets",
+        "count": "[length(variables('roles'))]",
+        "input": {
+          "name": "[variables('roles')[copyIndex('appEndpointTargets')]]",
+          "resourceId": "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex('appEndpointTargets')])]",
+          "group": "sites",
+          "zones": [
+            0
+          ]
+        }
+      }
+    ],
+    "suffix": "[uniqueString(resourceGroup().id)]",
+    "base": "[format('frpoc-{0}', variables('suffix'))]",
+    "tags": {
+      "application": "fraud-intelligence-poc",
+      "environment": "synthetic-poc",
+      "dataClassification": "synthetic-no-customer-data",
+      "deploymentId": "[parameters('deploymentId')]",
+      "owner": "[parameters('ownerTag')]",
+      "reviewAfter": "[parameters('reviewAfter')]",
+      "deploymentLifecycle": "[if(parameters('bootstrapEnabled'), 'bootstrap-authorized', 'infrastructure-only')]",
+      "lifecycleNote": "Review tag is not automatic deletion or a spending cap."
+    },
+    "roles": [
+      "web",
+      "broker",
+      "knowledge"
+    ],
+    "subnetNames": [
+      "web-integration",
+      "broker-integration",
+      "knowledge-integration"
+    ],
+    "subnetPrefixes": [
+      "10.87.1.0/26",
+      "10.87.2.0/26",
+      "10.87.3.0/26"
+    ],
+    "openAiUserRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')]",
+    "blobContributorRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+    "searchReaderRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '1407120a-92aa-4202-b7e9-c0e197c71c8f')]",
+    "searchWriterRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7')]",
+    "searchManagerRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0')]",
+    "secretsUserRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
+    "secretsOfficerRole": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')]",
+    "dnsNames": [
+      "privatelink.azurewebsites.net",
+      "privatelink.openai.azure.com",
+      "privatelink.search.windows.net",
+      "privatelink.blob.core.windows.net",
+      "privatelink.vaultcore.azure.net",
+      "privatelink.database.windows.net",
+      "privatelink.monitor.azure.com",
+      "privatelink.oms.opinsights.azure.com",
+      "privatelink.ods.opinsights.azure.com",
+      "privatelink.agentsvc.azure-automation.net"
+    ],
+    "commonSettings": {
+      "NODE_ENV": "production",
+      "TENANT_ID": "[subscription().tenantId]",
+      "API_AUDIENCE": "[format('api://{0}', parameters('authClientId'))]",
+      "ALLOWED_USER_OIDS": "[if(parameters('publicDemoEnabled'), format('{0},{1}', parameters('allowedUserOid'), parameters('publicDemoUserOid')), parameters('allowedUserOid'))]",
+      "BROKER_URL": "[format('https://{0}.azurewebsites.net', variables('appNames')[1])]",
+      "KNOWLEDGE_URL": "[format('https://{0}.azurewebsites.net', variables('appNames')[2])]",
+      "SQL_SERVER": "[format('{0}.database.windows.net', format('{0}-sql', variables('base')))]",
+      "SQL_DATABASE": "fraudpoc",
+      "OPENAI_ENDPOINT": "[format('https://{0}.openai.azure.com', format('{0}-openai', variables('base')))]",
+      "CHAT_DEPLOYMENT": "fraud-chat",
+      "EMBEDDING_DEPLOYMENT": "fraud-embedding",
+      "MODEL_VERSION": "[parameters('chatModelVersion')]",
+      "SEARCH_ENDPOINT": "[format('https://{0}.search.windows.net', format('{0}-search', variables('base')))]",
+      "SEARCH_INDEX": "fraud-policy-f17745ee4ea35aba",
+      "STORAGE_ACCOUNT_URL": "[format('https://{0}.blob.core.windows.net', format('frpoc{0}', variables('suffix')))]",
+      "EVIDENCE_CONTAINER": "evidence",
+      "SOURCE_AS_OF": "2026-10-01T00:00:00Z",
+      "KNOWLEDGE_MODE": "hybrid",
+      "WEBSITE_RUN_FROM_PACKAGE": "1",
+      "SCM_DO_BUILD_DURING_DEPLOYMENT": "false"
+    },
+    "endpointTargets": "[concat(variables('appEndpointTargets'), createArray(createObject('name', 'openai', 'resourceId', resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base'))), 'group', 'account', 'zones', createArray(1)), createObject('name', 'search', 'resourceId', resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base'))), 'group', 'searchService', 'zones', createArray(2)), createObject('name', 'blob', 'resourceId', resourceId('Microsoft.Storage/storageAccounts', format('frpoc{0}', variables('suffix'))), 'group', 'blob', 'zones', createArray(3)), createObject('name', 'vault', 'resourceId', resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix'))), 'group', 'vault', 'zones', createArray(4)), createObject('name', 'sql', 'resourceId', resourceId('Microsoft.Sql/servers', format('{0}-sql', variables('base'))), 'group', 'sqlServer', 'zones', createArray(5)), createObject('name', 'monitor', 'resourceId', resourceId('microsoft.insights/privateLinkScopes', format('{0}-monitor-private', variables('base'))), 'group', 'azuremonitor', 'zones', createArray(6, 7, 8, 9, 3))))]"
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "identities",
+        "count": "[length(variables('roles'))]"
+      },
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()])]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]"
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('{0}-bootstrap-mi', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]"
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}-app-nsg', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-private-HTTPS",
+            "properties": {
+              "priority": 100,
+              "direction": "Outbound",
+              "access": "Allow",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "10.87.10.0/24"
+            }
+          },
+          {
+            "name": "Allow-broker-SQL",
+            "properties": {
+              "priority": 110,
+              "direction": "Outbound",
+              "access": "Allow",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefix": "10.87.2.0/26",
+              "destinationAddressPrefix": "10.87.10.0/24"
+            }
+          },
+          {
+            "name": "Deny-other-SQL",
+            "properties": {
+              "priority": 120,
+              "direction": "Outbound",
+              "access": "Deny",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
+            }
+          },
+          {
+            "name": "Allow-Entra-identity",
+            "properties": {
+              "priority": 130,
+              "direction": "Outbound",
+              "access": "Allow",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "AzureActiveDirectory"
+            }
+          },
+          {
+            "name": "Deny-public-egress",
+            "properties": {
+              "priority": 4000,
+              "direction": "Outbound",
+              "access": "Deny",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}-endpoint-nsg', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "SQL-broker-and-bootstrap-only",
+            "properties": {
+              "priority": 100,
+              "direction": "Inbound",
+              "access": "Allow",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefixes": [
+                "10.87.2.0/26",
+                "10.87.20.0/27"
+              ],
+              "destinationAddressPrefix": "*"
+            }
+          },
+          {
+            "name": "Deny-other-SQL",
+            "properties": {
+              "priority": 110,
+              "direction": "Inbound",
+              "access": "Deny",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}-bootstrap-nsg', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "No-inbound-administration",
+            "properties": {
+              "priority": 100,
+              "direction": "Inbound",
+              "access": "Deny",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}-vnet', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.87.0.0/16"
+          ]
+        },
+        "subnets": "[concat(variables('integrationSubnets'), createArray(createObject('name', 'private-endpoints', 'properties', createObject('addressPrefix', '10.87.10.0/24', 'defaultOutboundAccess', false(), 'networkSecurityGroup', createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-endpoint-nsg', variables('base')))), 'privateEndpointNetworkPolicies', 'Enabled')), createObject('name', 'bootstrap', 'properties', createObject('addressPrefix', '10.87.20.0/27', 'defaultOutboundAccess', false(), 'networkSecurityGroup', createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-bootstrap-nsg', variables('base')))), 'delegations', createArray(createObject('name', 'private-setup-app', 'properties', createObject('serviceName', 'Microsoft.Web/serverFarms')))))))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-app-nsg', variables('base')))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-bootstrap-nsg', variables('base')))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-endpoint-nsg', variables('base')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "dnsZones",
+        "count": "[length(variables('dnsNames'))]"
+      },
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('dnsNames')[copyIndex()]]",
+      "location": "global",
+      "tags": "[variables('tags')]"
+    },
+    {
+      "copy": {
+        "name": "dnsLinks",
+        "count": "[length(variables('dnsNames'))]"
+      },
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[format('{0}/{1}', variables('dnsNames')[copyIndex()], format('{0}-link', variables('base')))]",
+      "location": "global",
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base')))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsNames')[copyIndex()])]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[format('frpoc{0}', variables('suffix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true,
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": false,
+        "publicNetworkAccess": "Disabled",
+        "networkAcls": {
+          "bypass": "None",
+          "defaultAction": "Deny"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', format('frpoc{0}', variables('suffix')), 'default')]",
+      "properties": {
+        "isVersioningEnabled": true,
+        "deleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        },
+        "containerDeleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', format('frpoc{0}', variables('suffix')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "containers",
+        "count": "[length(createArray('evidence', 'knowledge', 'artifacts'))]"
+      },
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[copyIndex()])]",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', format('frpoc{0}', variables('suffix')), 'default')]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "name": "[format('frpoc-{0}', variables('suffix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "tenantId": "[subscription().tenantId]",
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "enableRbacAuthorization": true,
+        "enableSoftDelete": true,
+        "enablePurgeProtection": true,
+        "softDeleteRetentionInDays": 7,
+        "publicNetworkAccess": "Disabled",
+        "networkAcls": {
+          "bypass": "None",
+          "defaultAction": "Deny"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2023-11-01",
+      "name": "[format('{0}-search', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "basic"
+      },
+      "properties": {
+        "replicaCount": 1,
+        "partitionCount": 1,
+        "hostingMode": "default",
+        "publicNetworkAccess": "disabled",
+        "disableLocalAuth": true
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}-openai', variables('base'))]",
+      "location": "[parameters('aiLocation')]",
+      "tags": "[variables('tags')]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "S0"
+      },
+      "properties": {
+        "customSubDomainName": "[format('{0}-openai', variables('base'))]",
+        "publicNetworkAccess": "Disabled",
+        "disableLocalAuth": true,
+        "networkAcls": {
+          "defaultAction": "Deny"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', format('{0}-openai', variables('base')), 'fraud-chat')]",
+      "sku": {
+        "name": "Standard",
+        "capacity": "[parameters('chatCapacity')]"
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "[parameters('chatModelName')]",
+          "version": "[parameters('chatModelVersion')]"
+        },
+        "versionUpgradeOption": "NoAutoUpgrade",
+        "raiPolicyName": "Microsoft.Default"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2024-10-01",
+      "name": "[format('{0}/{1}', format('{0}-openai', variables('base')), 'fraud-embedding')]",
+      "sku": {
+        "name": "Standard",
+        "capacity": "[parameters('embeddingCapacity')]"
+      },
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "[parameters('embeddingModelName')]",
+          "version": "[parameters('embeddingModelVersion')]"
+        },
+        "versionUpgradeOption": "NoAutoUpgrade",
+        "raiPolicyName": "Microsoft.Default"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('{0}-openai', variables('base')), 'fraud-chat')]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2023-08-01",
+      "name": "[format('{0}-sql', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "version": "12.0",
+        "minimalTlsVersion": "1.2",
+        "publicNetworkAccess": "Disabled",
+        "administrators": {
+          "administratorType": "ActiveDirectory",
+          "principalType": "[if(parameters('bootstrapEnabled'), 'Application', parameters('sqlAdminPrincipalType'))]",
+          "login": "[if(parameters('bootstrapEnabled'), format('{0}-bootstrap-mi', variables('base')), parameters('sqlAdminLogin'))]",
+          "sid": "[if(parameters('bootstrapEnabled'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId, parameters('sqlAdminObjectId'))]",
+          "tenantId": "[subscription().tenantId]",
+          "azureADOnlyAuthentication": true
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/connectionPolicies",
+      "apiVersion": "2023-08-01",
+      "name": "[format('{0}/{1}', format('{0}-sql', variables('base')), 'default')]",
+      "properties": {
+        "connectionType": "Proxy"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', format('{0}-sql', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2023-08-01",
+      "name": "[format('{0}/{1}', format('{0}-sql', variables('base')), 'fraudpoc')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "Basic",
+        "tier": "Basic",
+        "capacity": 5
+      },
+      "properties": {
+        "maxSizeBytes": 2147483648,
+        "collation": "SQL_Latin1_General_CP1_CI_AS",
+        "requestedBackupStorageRedundancy": "Local"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', format('{0}-sql', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[format('{0}-logs', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30,
+        "workspaceCapping": {
+          "dailyQuotaGb": "[json('0.5')]"
+        },
+        "publicNetworkAccessForIngestion": "Disabled",
+        "publicNetworkAccessForQuery": "Disabled",
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('{0}-insights', variables('base'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('base')))]",
+        "publicNetworkAccessForIngestion": "Disabled",
+        "publicNetworkAccessForQuery": "Disabled",
+        "DisableLocalAuth": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('base')))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/privateLinkScopes",
+      "apiVersion": "2021-07-01-preview",
+      "name": "[format('{0}-monitor-private', variables('base'))]",
+      "location": "global",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "accessModeSettings": {
+          "ingestionAccessMode": "PrivateOnly",
+          "queryAccessMode": "PrivateOnly"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/privateLinkScopes/scopedResources",
+      "apiVersion": "2021-07-01-preview",
+      "name": "[format('{0}/{1}', format('{0}-monitor-private', variables('base')), 'logs')]",
+      "properties": {
+        "linkedResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('base')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('base')))]",
+        "[resourceId('microsoft.insights/privateLinkScopes', format('{0}-monitor-private', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/privateLinkScopes/scopedResources",
+      "apiVersion": "2021-07-01-preview",
+      "name": "[format('{0}/{1}', format('{0}-monitor-private', variables('base')), 'insights')]",
+      "properties": {
+        "linkedResourceId": "[resourceId('Microsoft.Insights/components', format('{0}-insights', variables('base')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', format('{0}-insights', variables('base')))]",
+        "[resourceId('microsoft.insights/privateLinkScopes', format('{0}-monitor-private', variables('base')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "plans",
+        "count": "[length(createArray('web', 'services'))]"
+      },
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-12-01",
+      "name": "[format('{0}-{1}-plan', variables('base'), createArray('web', 'services')[copyIndex()])]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "linux",
+      "sku": {
+        "name": "B1",
+        "tier": "Basic",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "copy": {
+        "name": "apps",
+        "count": "[length(variables('roles'))]"
+      },
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('appNames')[copyIndex()]]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "app,linux",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()])))]": {}
+        }
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-{1}-plan', variables('base'), createArray('web', 'services')[if(equals(copyIndex(), 0), 0, 1)]))]",
+        "httpsOnly": true,
+        "publicNetworkAccess": "Disabled",
+        "virtualNetworkSubnetId": "[format('{0}/subnets/{1}', resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base'))), variables('subnetNames')[copyIndex()])]",
+        "vnetRouteAllEnabled": true,
+        "keyVaultReferenceIdentity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()]))]",
+        "siteConfig": {
+          "linuxFxVersion": "NODE|22-lts",
+          "appCommandLine": "node src/server.mjs",
+          "alwaysOn": true,
+          "minTlsVersion": "1.2",
+          "scmMinTlsVersion": "1.2",
+          "ftpsState": "Disabled",
+          "http20Enabled": true,
+          "scmIpSecurityRestrictionsUseMain": false,
+          "scmIpSecurityRestrictionsDefaultAction": "Deny",
+          "appSettings": "[concat(variables('commonAppSettings'), createArray(createObject('name', 'ROLE', 'value', variables('roles')[copyIndex()]), createObject('name', 'AZURE_CLIENT_ID', 'value', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()])), '2023-01-31').clientId), createObject('name', 'ALLOWED_CALLER_OIDS', 'value', reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), '2023-01-31').principalId), createObject('name', 'PUBLIC_DEMO_ENABLED', 'value', if(and(parameters('publicDemoEnabled'), equals(copyIndex(), 0)), 'true', 'false')), createObject('name', 'PUBLIC_DEMO_USER_OID', 'value', parameters('publicDemoUserOid')), createObject('name', 'PUBLIC_DEMO_DATASET', 'value', 'azure-sql-synthetic-fraud-v1'), createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'value', reference(resourceId('Microsoft.Insights/components', format('{0}-insights', variables('base'))), '2020-02-02').ConnectionString)))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('{0}-openai', variables('base')), 'fraud-chat')]",
+        "[resourceId('Microsoft.Sql/servers/databases', format('{0}-sql', variables('base')), 'fraudpoc')]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', format('{0}-openai', variables('base')), 'fraud-embedding')]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()]))]",
+        "[resourceId('Microsoft.Insights/components', format('{0}-insights', variables('base')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]",
+        "[resourceId('Microsoft.Web/serverfarms', format('{0}-{1}-plan', variables('base'), createArray('web', 'services')[if(equals(copyIndex(), 0), 0, 1)]))]",
+        "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]",
+        "[resourceId('Microsoft.Sql/servers', format('{0}-sql', variables('base')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('frpoc{0}', variables('suffix')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "authSettings",
+        "count": "[length(variables('roles'))]"
+      },
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2023-12-01",
+      "name": "[format('{0}/{1}', variables('appNames')[copyIndex()], 'authsettingsV2')]",
+      "properties": {
+        "platform": {
+          "enabled": "[not(and(parameters('publicDemoEnabled'), equals(copyIndex(), 0)))]",
+          "runtimeVersion": "~1"
+        },
+        "globalValidation": {
+          "requireAuthentication": "[not(and(parameters('publicDemoEnabled'), equals(copyIndex(), 0)))]",
+          "unauthenticatedClientAction": "[if(and(parameters('publicDemoEnabled'), equals(copyIndex(), 0)), 'AllowAnonymous', if(equals(copyIndex(), 0), 'RedirectToLoginPage', 'Return401'))]",
+          "redirectToProvider": "azureActiveDirectory",
+          "excludedPaths": [
+            "/health/live"
+          ]
+        },
+        "identityProviders": {
+          "azureActiveDirectory": {
+            "enabled": true,
+            "registration": "[union(createObject('openIdIssuer', format('https://login.microsoftonline.com/{0}/v2.0', subscription().tenantId), 'clientId', parameters('authClientId')), if(equals(copyIndex(), 0), createObject('clientSecretSettingName', 'AAD_CLIENT_SECRET'), createObject()))]",
+            "validation": {
+              "allowedAudiences": [
+                "[format('api://{0}', parameters('authClientId'))]",
+                "[parameters('authClientId')]"
+              ],
+              "defaultAuthorizationPolicy": {
+                "allowedApplications": "[if(equals(copyIndex(), 0), createArray(parameters('authClientId'), '04b07795-8ddb-461a-bbee-02f9e1bf7b46'), createArray(reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), '2023-01-31').clientId))]",
+                "allowedPrincipals": {
+                  "identities": "[if(equals(copyIndex(), 0), createArray(parameters('allowedUserOid')), createArray(reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), '2023-01-31').principalId))]"
+                }
+              }
+            }
+          }
+        },
+        "login": {
+          "tokenStore": {
+            "enabled": false
+          },
+          "preserveUrlFragmentsForLogins": false
+        },
+        "httpSettings": {
+          "requireHttps": true
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "publishingScm",
+        "count": "[length(variables('roles'))]"
+      },
+      "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+      "apiVersion": "2023-12-01",
+      "name": "[format('{0}/{1}', variables('appNames')[copyIndex()], 'scm')]",
+      "properties": {
+        "allow": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "publishingFtp",
+        "count": "[length(variables('roles'))]"
+      },
+      "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+      "apiVersion": "2023-12-01",
+      "name": "[format('{0}/{1}', variables('appNames')[copyIndex()], 'ftp')]",
+      "properties": {
+        "allow": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "appDiagnostics",
+        "count": "[length(variables('roles'))]"
+      },
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]",
+      "name": "private-poc-logs",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('base')))]",
+        "logs": [
+          {
+            "category": "AppServiceConsoleLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', variables('base')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "endpoints",
+        "count": "[length(variables('endpointTargets'))]"
+      },
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}-{1}-pe', variables('base'), variables('endpointTargets')[copyIndex()].name)]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "subnet": {
+          "id": "[format('{0}/subnets/private-endpoints', resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base'))))]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "[format('{0}-connection', variables('endpointTargets')[copyIndex()].name)]",
+            "properties": {
+              "privateLinkServiceId": "[variables('endpointTargets')[copyIndex()].resourceId]",
+              "groupIds": [
+                "[variables('endpointTargets')[copyIndex()].group]"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "apps",
+        "[resourceId('Microsoft.Insights/privateLinkScopes/scopedResources', format('{0}-monitor-private', variables('base')), 'insights')]",
+        "[resourceId('Microsoft.Insights/privateLinkScopes/scopedResources', format('{0}-monitor-private', variables('base')), 'logs')]",
+        "[resourceId('microsoft.insights/privateLinkScopes', format('{0}-monitor-private', variables('base')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]",
+        "[resourceId('Microsoft.Sql/servers', format('{0}-sql', variables('base')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('frpoc{0}', variables('suffix')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "endpointDns",
+        "count": "[length(variables('endpointTargets'))]"
+      },
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2024-05-01",
+      "name": "[format('{0}/{1}', format('{0}-{1}-pe', variables('base'), variables('endpointTargets')[copyIndex()].name), 'default')]",
+      "properties": {
+        "copy": [
+          {
+            "name": "privateDnsZoneConfigs",
+            "count": "[length(variables('endpointTargets')[copyIndex()].zones)]",
+            "input": {
+              "name": "[replace(variables('dnsNames')[variables('endpointTargets')[copyIndex()].zones[copyIndex('privateDnsZoneConfigs')]], '.', '-')]",
+              "properties": {
+                "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsNames')[variables('endpointTargets')[copyIndex()].zones[copyIndex('privateDnsZoneConfigs')]])]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "apps",
+        "dnsZones",
+        "[resourceId('Microsoft.Network/privateEndpoints', format('{0}-{1}-pe', variables('base'), variables('endpointTargets')[copyIndex()].name))]",
+        "[resourceId('microsoft.insights/privateLinkScopes', format('{0}-monitor-private', variables('base')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]",
+        "[resourceId('Microsoft.Sql/servers', format('{0}-sql', variables('base')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('frpoc{0}', variables('suffix')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "modelReaders",
+        "count": "[length(createArray(0, 2))]"
+      },
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[createArray(0, 2)[copyIndex()]])), variables('openAiUserRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[createArray(0, 2)[copyIndex()]])), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('openAiUserRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[createArray(0, 2)[copyIndex()]]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[createArray(0, 2)[copyIndex()]]))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[0])]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[0]), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), variables('blobContributorRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('blobContributorRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[0])]",
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[0])]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]",
+      "name": "[guid(resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[2])), variables('searchReaderRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[2])), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('searchReaderRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[2]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[2]))]",
+        "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix')))]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), variables('secretsUserRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0])), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('secretsUserRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[0]))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "bootstrapSearchRoles",
+        "count": "[length(createArray(variables('searchWriterRole'), variables('searchManagerRole')))]"
+      },
+      "condition": "[parameters('bootstrapEnabled')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]",
+      "name": "[guid(resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), createArray(variables('searchWriterRole'), variables('searchManagerRole'))[copyIndex()])]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[createArray(variables('searchWriterRole'), variables('searchManagerRole'))[copyIndex()]]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('{0}-search', variables('base')))]"
+      ]
+    },
+    {
+      "condition": "[parameters('bootstrapEnabled')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), variables('openAiUserRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('openAiUserRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', variables('base')))]"
+      ]
+    },
+    {
+      "condition": "[parameters('bootstrapEnabled')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[2])]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[2]), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), variables('blobContributorRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('blobContributorRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[2])]",
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', format('frpoc{0}', variables('suffix')), 'default', createArray('evidence', 'knowledge', 'artifacts')[2])]"
+      ]
+    },
+    {
+      "condition": "[parameters('bootstrapEnabled')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix')))]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix'))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), variables('secretsOfficerRole'))]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[variables('secretsOfficerRole')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "bootstrapDeployRole",
+        "count": "[length(variables('roles'))]"
+      },
+      "condition": "[parameters('bootstrapEnabled')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]",
+      "name": "[guid(resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()]), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), 'website-contributor')]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'de139f84-1756-47ae-9be6-808fbbe84772')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]",
+        "[resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()])]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "apps": {
+      "type": "array",
+      "copy": {
+        "count": "[length(variables('roles'))]",
+        "input": {
+          "role": "[variables('roles')[copyIndex()]]",
+          "name": "[variables('appNames')[copyIndex()]]",
+          "url": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', variables('appNames')[copyIndex()]), '2023-12-01').defaultHostName)]",
+          "identityId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()]))]",
+          "clientId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()])), '2023-01-31').clientId]",
+          "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-{1}-mi', variables('base'), variables('roles')[copyIndex()])), '2023-01-31').principalId]"
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "value": {
+        "resourceGroup": "[resourceGroup().name]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "deploymentId": "[parameters('deploymentId')]",
+        "bootstrapEnabled": "[parameters('bootstrapEnabled')]",
+        "publicDemoEnabled": "[parameters('publicDemoEnabled')]",
+        "publicDemoUserOid": "[parameters('publicDemoUserOid')]",
+        "sqlAdminObjectId": "[parameters('sqlAdminObjectId')]",
+        "sqlAdminLogin": "[parameters('sqlAdminLogin')]",
+        "sqlAdminPrincipalType": "[parameters('sqlAdminPrincipalType')]",
+        "location": "[parameters('location')]",
+        "modelLocation": "[parameters('aiLocation')]",
+        "tenantId": "[subscription().tenantId]",
+        "authClientId": "[parameters('authClientId')]",
+        "allowedUserOid": "[parameters('allowedUserOid')]",
+        "bootstrap": {
+          "name": "[format('{0}-setup', variables('base'))]",
+          "type": "temporary-private-app-service",
+          "identityId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base')))]",
+          "clientId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').clientId]",
+          "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bootstrap-mi', variables('base'))), '2023-01-31').principalId]"
+        },
+        "sqlServer": "[format('{0}-sql', variables('base'))]",
+        "sqlHost": "[format('{0}.database.windows.net', format('{0}-sql', variables('base')))]",
+        "sqlDatabase": "fraudpoc",
+        "openaiName": "[format('{0}-openai', variables('base'))]",
+        "openaiEndpoint": "[format('https://{0}.openai.azure.com', format('{0}-openai', variables('base')))]",
+        "chatDeployment": "fraud-chat",
+        "modelVersion": "[parameters('chatModelVersion')]",
+        "searchIndex": "fraud-policy-f17745ee4ea35aba",
+        "embeddingDeployment": "fraud-embedding",
+        "searchName": "[format('{0}-search', variables('base'))]",
+        "searchEndpoint": "[format('https://{0}.search.windows.net', format('{0}-search', variables('base')))]",
+        "storageName": "[format('frpoc{0}', variables('suffix'))]",
+        "storageUrl": "[format('https://{0}.blob.core.windows.net', format('frpoc{0}', variables('suffix')))]",
+        "vaultName": "[format('frpoc-{0}', variables('suffix'))]",
+        "vaultUri": "[reference(resourceId('Microsoft.KeyVault/vaults', format('frpoc-{0}', variables('suffix'))), '2023-07-01').vaultUri]",
+        "logsName": "[format('{0}-logs', variables('base'))]",
+        "vnetName": "[format('{0}-vnet', variables('base'))]",
+        "setupPlanId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-{1}-plan', variables('base'), createArray('web', 'services')[0]))]",
+        "setupSubnetId": "[format('{0}/subnets/bootstrap', resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', variables('base'))))]"
+      }
+    }
+  }
+}

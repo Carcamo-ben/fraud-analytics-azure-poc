@@ -1,0 +1,21 @@
+{
+  "subscriptionId": "",
+  "resourceGroup": "rg-fraud-analytics-sample",
+  "location": "canadaeast",
+  "aiLocation": "canadaeast",
+  "authClientId": "",
+  "allowedUserOid": "",
+  "sqlAdminObjectId": "",
+  "sqlAdminLogin": "",
+  "sqlAdminPrincipalType": "Group",
+  "ownerTag": "",
+  "reviewAfter": "",
+  "chatModelName": "gpt-4.1-mini",
+  "chatModelVersion": "2025-04-14",
+  "chatCapacity": 10,
+  "embeddingModelName": "text-embedding-3-small",
+  "embeddingModelVersion": "1",
+  "embeddingCapacity": 10,
+  "publicDemoEnabled": false,
+  "publicDemoUserOid": ""
+}

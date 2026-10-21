@@ -1,0 +1,39 @@
+name: Validate sample
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check Bicep toolchain
+        run: |
+          $version = az bicep version 2>&1
+          if ($LASTEXITCODE -ne 0 -or "$version" -notmatch '0\.45\.15') {
+            az bicep install --version v0.45.15
+            if ($LASTEXITCODE -ne 0) { throw 'Unable to install the pinned Bicep version.' }
+          }
+      - name: Unit and mocked deployment lifecycle tests
+        env:
+          VERIFY_BICEP_BUILD: '1'
+        run: npm test
+      - name: Edge browser workflows
+        run: npm run test:browser
